@@ -17,7 +17,10 @@ def parse_args():
     if len(sys.argv) != 3:
         return None, None
     try:
-        k = int(sys.argv[1])
+        if not kmeans.is_natural(sys.argv[1]):
+            print("Incorrect number of clusters!")
+            sys.exit(1)
+        k = int(float(sys.argv[1]))
         file_name = sys.argv[2]
         return k, file_name
     except ValueError:
@@ -83,6 +86,10 @@ def main():
     X = load_data(file_name)
     if X is None:
         print("An Error Has Occurred")
+        sys.exit(1)
+
+    if not 1 < k < len(X):
+        print("Incorrect number of clusters!")
         sys.exit(1)
 
     symnmf_labels = get_symnmf_labels(X, k)

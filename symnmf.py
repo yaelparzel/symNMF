@@ -4,6 +4,37 @@ import symnmfmodule
 
 np.random.seed(1234)
 
+def is_natural(potential_natural):
+    """
+    Check if the input is a natural number (positive integer)
+    Input: potential_natural - the input to check
+    Output: True if it is a natural number, False otherwise
+    """
+    if not isinstance(potential_natural, str):
+        return False
+    potential_natural = potential_natural.strip()
+    if not potential_natural:
+        return False
+    if potential_natural[0] == "-":
+        return False
+    if potential_natural[0] == "+":
+        potential_natural = potential_natural[1:]
+        if not potential_natural:
+            return False
+    if "." in potential_natural:
+        if potential_natural.count(".") > 1:
+            return False
+        whole, frac = potential_natural.split(".")
+        if not whole.isdigit():
+            return False
+        if not all(c == "0" for c in frac):
+            return False
+    else:
+        if not potential_natural.isdigit():
+            return False
+    return True
+
+
 def print_matrix(mat):
     """
     Print matrix with 4 decimal places, comma separated
@@ -19,8 +50,12 @@ def parse_args():
     """
     if len(sys.argv) != 4:
         return None, None, None
+    
+    if not is_natural(sys.argv[1]):
+        print("Incorrect number of clusters!")
+        sys.exit(1)
     try:
-        k = int(sys.argv[1])
+        k = int(float(sys.argv[1]))
     except ValueError:
         return None, None, None
     
@@ -73,8 +108,8 @@ def main():
         print("An Error Has Occurred")
         sys.exit(1)
     
-    if not 1 <= k < len(X):
-        print("An Error Has Occurred")
+    if not 1 < k < len(X):
+        print("Incorrect number of clusters!")
         sys.exit(1)
 
     try:

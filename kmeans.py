@@ -1,9 +1,9 @@
-# Original file from HW1
+# Original file from HW1 (Without main function + changing defualt contants)
 
 import sys
 
-EPS = 0.001
-DEFAULT_ITER = 400
+EPS = 1e-4
+DEFAULT_ITER = 300
 
 def is_natural(potential_natural):
     # 3 and 3.0 are ok 3.5/abc/-3/3.00001 are invalid
@@ -97,59 +97,3 @@ def format_centroids(centroids):
     for c in centroids:
         lines.append(",".join("%.4f" % value for value in c))
     return "\n".join(lines)
-
-
-def main():
-    args = sys.argv[1:]
-
-    if len(args) == 1:
-        k_arg, iter_arg = args[0], None
-    elif len(args) == 2:
-        k_arg, iter_arg = args[0], args[1]
-    else:
-        print("An Error Has Occurred")
-        sys.exit(1)
-
-    if not is_natural(k_arg):
-        print("Incorrect number of clusters!")
-        sys.exit(1)
-    k = int(float(k_arg))
-
-    if iter_arg is None:
-        max_iter = DEFAULT_ITER
-    else:
-        if not is_natural(iter_arg):
-            print("Incorrect maximum iteration!")
-            sys.exit(1)
-        max_iter = int(float(iter_arg))
-        if not (1 < max_iter < 800):
-            print("Incorrect maximum iteration!")
-            sys.exit(1)
-
-    try:
-        points = read_points(sys.stdin)
-    except Exception:
-        print("An Error Has Occurred")
-        sys.exit(1)
-
-    number_of_points = len(points)
-
-    if number_of_points == 0:
-        print("An Error Has Occurred")
-        sys.exit(1)
-
-    if not (1 < k < number_of_points):
-        print("Incorrect number of clusters!")
-        sys.exit(1)
-
-    try:
-        centroids = kmeans(points, k, max_iter)
-    except Exception:
-        print("An Error Has Occurred")
-        sys.exit(1)
-
-    print(format_centroids(centroids))
-
-
-if __name__ == "__main__":
-    main()
