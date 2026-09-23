@@ -11,8 +11,3 @@ symnmf.o: symnmf.c symnmf.h matrix.h
  
 matrix.o: matrix.c matrix.h
 	$(CC) $(CFLAGS) -c matrix.c
- 
-clean:
-	rm -f *.o symnmf
-
-.PHONY: clean

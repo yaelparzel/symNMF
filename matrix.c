@@ -29,7 +29,7 @@ double **mat_alloc(int rows, int cols)
 }
 
 /*
- * Return an independent copy of the rows x cols matrix m.
+ * Return a deep copy of the (rows x cols) matrix m.
  * Returns NULL on allocation failure.
  */
 double **mat_copy(double **m, int rows, int cols)
@@ -50,9 +50,9 @@ double **mat_copy(double **m, int rows, int cols)
 }
 
 /*
- * Matrix product a x b, where a is ar x ac and b is ac x bc.
- * The caller is responsible for the inner dimensions agreeing.
- * Returns a newly allocated ar x bc matrix, or NULL on allocation failure.
+ * Compute C = A (ar x ac) * B (ac x bc) and return new ar x bc matrix.
+ * Returns NULL on allocation failure; caller frees result with mat_free.
+ * Assumes inner dimensions (ac) match; no runtime check performed.
  */
 double **mat_mult(double **a, int ar, int ac, double **b, int bc)
 {
@@ -77,8 +77,8 @@ double **mat_mult(double **a, int ar, int ac, double **b, int bc)
 }
 
 /*
- * Transpose of the rows x cols matrix m.
- * Returns a newly allocated cols x rows matrix, or NULL on failure.
+ * Transpose of the (rows x cols) matrix m.
+ * Returns a newly allocated (cols x rows) matrix, or NULL on failure.
  */
 double **mat_transpose(double **m, int rows, int cols)
 {
@@ -98,8 +98,8 @@ double **mat_transpose(double **m, int rows, int cols)
 }
 
 /*
- * Squared Frobenius norm of (a - b), both rows x cols:
- * the sum of the squares of all entrywise differences.
+ * Squared Frobenius norm of elementwise (a - b) for rows x cols.
+ * Returns sum of squared elementwise differences: (a[i][j]-b[i][j])^2.
  */
 double mat_sq_frob_diff(double **a, double **b, int rows, int cols)
 {
@@ -134,8 +134,7 @@ double sq_euclidean(const double *p, const double *q, int d)
 }
 
 /*
- * Print the rows x cols matrix m: every value to four decimal places,
- * values within a row separated by commas, one row per line.
+ * Print the (rows x cols) matrix m: every value to four decimal places, values within a row separated by commas, one row per line.
  */
 void mat_print(double **m, int rows, int cols)
 {
@@ -153,8 +152,8 @@ void mat_print(double **m, int rows, int cols)
 }
 
 /*
- * Release a matrix allocated by mat_alloc, freeing its first `rows` rows.
- * Safe to call on NULL.
+ * Free a matrix previously returned by mat_alloc; safe to call with NULL.
+ * Frees the first row buffers, then the row pointer array.
  */
 void mat_free(double **m, int rows)
 {

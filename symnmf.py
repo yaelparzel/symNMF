@@ -52,12 +52,8 @@ def parse_args():
         return None, None, None
     
     if not is_natural(sys.argv[1]):
-        print("Incorrect number of clusters!")
-        sys.exit(1)
-    try:
-        k = int(float(sys.argv[1]))
-    except ValueError:
         return None, None, None
+    k = int(float(sys.argv[1]))
     
     goal = sys.argv[2]
     file_name = sys.argv[3]
@@ -100,7 +96,7 @@ def execute_goal(k, goal, X):
 def main():
     k, goal, file_name = parse_args()
     if k is None:
-        print("An Error Has Occurred")
+        print("Incorrect number of clusters!")
         sys.exit(1)
         
     X = load_data(file_name)

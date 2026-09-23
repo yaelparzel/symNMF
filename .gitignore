@@ -1,0 +1,12 @@
+Prev_final/
+build/
+__pycache__/
+# Compiled files
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.class
+*.pyc

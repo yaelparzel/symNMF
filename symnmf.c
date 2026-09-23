@@ -11,12 +11,9 @@
 #define SYMNMF_MAX_ITER 300
 
 /*
- * Measure the layout of the input stream: *n receives the number of lines
- * holding data and *d the number of comma separated values on the first
- * such line. Blank lines are ignored and both LF and CRLF endings are
- * accepted, with or without a final newline.
- * The stream is rewound before returning. Returns 0 on success, 1 if the
- * file holds no data at all.
+ * Determines the matrix dimensions from the input file.
+ * Input: file pointer, pointers to row and column counters.
+ * Output: 0 on success, or 1 if the file contains no data.
  */
 static int scan_dimensions(FILE *fp, int *n, int *d)
 {
@@ -37,6 +34,7 @@ static int scan_dimensions(FILE *fp, int *n, int *d)
         else if (c != '\r') {
             on_line = 1;
             if (c == ',' && first_line) {
+                /* Count commas only on the first row to determine column count. */
                 (*d)++;
             }
         }
@@ -49,9 +47,9 @@ static int scan_dimensions(FILE *fp, int *n, int *d)
 }
 
 /*
- * Consume the separator that follows a value: any run of whitespace, plus
- * one comma if one is present. Anything else is pushed back for the next
- * read, so the stream is left on the first character of the next value.
+ * Advances past the separator after a value.
+ * Input: file pointer positioned after a parsed number.
+ * Output: Leaves the stream ready to read the next value.
  */
 static void skip_separator(FILE *fp)
 {
@@ -66,10 +64,9 @@ static void skip_separator(FILE *fp)
 }
 
 /*
- * Read n points of d coordinates each from fp into a new matrix. Values are
- * read with fscanf, which skips leading whitespace, and the separator that
- * follows each value is consumed explicitly.
- * Returns NULL on allocation failure or on a value that cannot be parsed.
+ * Reads the data points into a matrix.
+ * Input: file pointer, number of points, and dimension.
+ * Output: Newly allocated matrix of values, or NULL on failure.
  */
 static double **read_values(FILE *fp, int n, int d)
 {
@@ -93,10 +90,9 @@ static double **read_values(FILE *fp, int n, int d)
 }
 
 /*
- * Read the data points of the named file, setting *n to the number of
- * points and *d to their dimension.
- * Returns NULL if the file cannot be opened, contains no data, or contains
- * something that is not a number.
+ * Loads the input points from a file.
+ * Input: file name and pointers to row and column counts.
+ * Output: Matrix of points, or NULL if the file is invalid.
  */
 static double **read_points(const char *filename, int *n, int *d)
 {
@@ -117,9 +113,9 @@ static double **read_points(const char *filename, int *n, int *d)
 }
 
 /*
- * Similarity matrix A (n x n) of the n data points of x, each of length d:
- * a_ij = exp(-||x_i - x_j||^2 / 2) for i != j, and a_ii = 0.
- * Returns a newly allocated matrix, or NULL on allocation failure.
+ * Computes the similarity matrix for the given data points.
+ * Input: point matrix, number of points, and dimension.
+ * Output: New n x n similarity matrix, or NULL on failure.
  */
 double **sym(double **x, int n, int d)
 {
@@ -142,9 +138,9 @@ double **sym(double **x, int n, int d)
 }
 
 /*
- * Allocate and return the vector of row sums of the n x n matrix m, that
- * is the degree of every vertex of the similarity graph.
- * Returns NULL on allocation failure.
+ * Computes the degree of each node in a matrix.
+ * Input: matrix and number of rows.
+ * Output: Array of row sums, or NULL on failure.
  */
 static double *row_sums(double **m, int n)
 {
@@ -164,10 +160,9 @@ static double *row_sums(double **m, int n)
 }
 
 /*
- * Diagonal degree matrix D (n x n) of the n data points of x, each of
- * length d. Entry (i,i) is the degree of point i and every off-diagonal
- * entry is zero.
- * Returns a newly allocated matrix, or NULL on failure.
+ * Builds the diagonal degree matrix for the data.
+ * Input: point matrix, number of points, and dimension.
+ * Output: New degree matrix, or NULL on failure.
  */
 double **ddg(double **x, int n, int d)
 {
@@ -196,10 +191,9 @@ double **ddg(double **x, int n, int d)
 }
 
 /*
- * Normalised similarity matrix W = D^(-1/2) A D^(-1/2) (n x n) for the n
- * data points of x, each of length d. Entry by entry this is
- * w_ij = a_ij / sqrt(deg_i * deg_j).
- * Returns a newly allocated matrix, or NULL on failure.
+ * Normalizes the similarity matrix using the degree matrix.
+ * Input: point matrix, number of points, and dimension.
+ * Output: New normalized matrix, or NULL on failure.
  */
 double **norm(double **x, int n, int d)
 {
@@ -235,11 +229,9 @@ double **norm(double **x, int n, int d)
 }
 
 /*
- * Build H(t+1) entrywise from H, the product W*H and the product H*(H^T H):
- * next_ij = h_ij * (1 - beta + beta * wh_ij / hhth_ij).
- * A zero denominator can only occur where h_ij is itself zero, so the entry
- * is set to zero rather than dividing.
- * Returns a newly allocated n x k matrix, or NULL on allocation failure.
+ * Updates the matrix H using the multiplicative formula.
+ * Input: current H, W*H product, and H*(H^T H) product.
+ * Output: New H matrix, or NULL on failure.
  */
 static double **fill_update(double **h, double **wh, double **hhth,
                             int n, int k)
@@ -254,6 +246,7 @@ static double **fill_update(double **h, double **wh, double **hhth,
     for (i = 0; i < n; i++) {
         for (j = 0; j < k; j++) {
             if (hhth[i][j] > 0.0) {
+                /* Avoid division by zero when the denominator is zero. */
                 next[i][j] = h[i][j] * (1.0 - SYMNMF_BETA +
                     SYMNMF_BETA * wh[i][j] / hhth[i][j]);
             } else {
@@ -265,9 +258,9 @@ static double **fill_update(double **h, double **wh, double **hhth,
 }
 
 /*
- * Perform one multiplicative update of h against w.
- * Returns a newly allocated n x k matrix holding H(t+1), or NULL if any
- * intermediate allocation fails. All intermediates are released here.
+ * Performs one optimization step for H.
+ * Input: current H matrix and normalized similarity matrix W.
+ * Output: Updated H matrix, or NULL on failure.
  */
 static double **update_h(double **h, double **w, int n, int k)
 {
@@ -293,10 +286,9 @@ static double **update_h(double **h, double **w, int n, int k)
 }
 
 /*
- * Optimise H (n x k) against W (n x n), stopping once SYMNMF_MAX_ITER
- * updates have run or the squared Frobenius norm of the change between two
- * consecutive iterates drops below SYMNMF_EPS.
- * h is not modified; the final H is returned as a new matrix, NULL on failure.
+ * Optimizes the factor matrix H until convergence.
+ * Input: initial H matrix, similarity matrix W, and dimensions.
+ * Output: Final H matrix, or NULL on failure.
  */
 double **symnmf(double **h, double **w, int n, int k)
 {
@@ -325,9 +317,9 @@ double **symnmf(double **h, double **w, int n, int k)
 }
 
 /*
- * Dispatch to the routine named by goal, which must be one of sym, ddg or
- * norm. The result is the corresponding n x n matrix.
- * Returns NULL on an unrecognised goal or on failure.
+ * Dispatches to the requested matrix-building function.
+ * Input: goal name, data matrix, and dimensions.
+ * Output: Result matrix for the selected goal, or NULL on failure.
  */
 static double **run_goal(const char *goal, double **x, int n, int d)
 {
@@ -344,9 +336,9 @@ static double **run_goal(const char *goal, double **x, int n, int d)
 }
 
 /*
- * Entry point of the standalone program, invoked as
- * ./symnmf <goal> <file_name> with goal one of sym, ddg or norm.
- * Prints the requested matrix, or the error message on any failure.
+ * Runs the command-line program for the selected matrix goal.
+ * Input: command-line arguments with goal and input file.
+ * Output: Prints the requested matrix or the error message.
  */
 int main(int argc, char **argv)
 {
