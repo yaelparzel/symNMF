@@ -1,6 +1,7 @@
 Prev_final/
 build/
 __pycache__/
+inputs/
 # Compiled files
 *.o
 *.obj
@@ -10,3 +11,4 @@ __pycache__/
 *.dylib
 *.class
 *.pyc
+generate_input.py

@@ -9,6 +9,7 @@
 #define SYMNMF_BETA 0.5
 #define SYMNMF_EPS 1e-4
 #define SYMNMF_MAX_ITER 300
+#define EPS_DIV 1e-12
 
 /*
  * Determines the matrix dimensions from the input file.
@@ -245,13 +246,9 @@ static double **fill_update(double **h, double **wh, double **hhth,
     }
     for (i = 0; i < n; i++) {
         for (j = 0; j < k; j++) {
-            if (hhth[i][j] > 0.0) {
-                /* Avoid division by zero when the denominator is zero. */
-                next[i][j] = h[i][j] * (1.0 - SYMNMF_BETA +
-                    SYMNMF_BETA * wh[i][j] / hhth[i][j]);
-            } else {
-                next[i][j] = 0.0;
-            }
+            // Avoid division by zero by adding a small epsilon to the denominator
+            next[i][j] = h[i][j] * (1.0 - SYMNMF_BETA + 
+                         SYMNMF_BETA * wh[i][j] / (hhth[i][j] + EPS_DIV));
         }
     }
     return next;
