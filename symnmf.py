@@ -2,7 +2,6 @@ import sys
 import numpy as np
 import symnmfmodule
 
-np.random.seed(1234)
 
 def is_natural(potential_natural):
     """
@@ -46,10 +45,9 @@ def print_matrix(mat):
 def parse_args():
     """ 
     Extract and validate command line arguments
+    Assumes len(sys.argv) == 4 is already checked.
     Output: k, goal, file_name if valid, otherwise None, None, None
     """
-    if len(sys.argv) != 4:
-        return None, None, None
     
     if not is_natural(sys.argv[1]):
         return None, None, None
@@ -84,6 +82,7 @@ def execute_goal(k, goal, X):
     elif goal == 'norm':
         return symnmfmodule.norm(X)
     elif goal == 'symnmf':
+        np.random.seed(1234)
         W = symnmfmodule.norm(X)
         n = len(W)
         m = sum(sum(row) for row in W) / (n * n)
@@ -94,6 +93,10 @@ def execute_goal(k, goal, X):
     return None
 
 def main():
+    if len(sys.argv) != 4:
+        print("An Error Has Occurred")
+        sys.exit(1)
+
     k, goal, file_name = parse_args()
     if k is None:
         print("Incorrect number of clusters!")

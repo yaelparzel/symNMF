@@ -7,7 +7,6 @@ from sklearn.metrics import silhouette_score, adjusted_rand_score
 MAX_ITER = 300
 EPS = 1e-4
 
-np.random.seed(1234)
 
 def parse_args():
     """
@@ -49,6 +48,7 @@ def get_symnmf_labels(X, k):
     m = sum(sum(row) for row in W) / (n * n)
     high = 2 * np.sqrt(m / k)
     
+    np.random.seed(1234)
     H_init = np.random.uniform(0, high, (n, k)).tolist()
     H_final = symnmfmodule.symnmf(H_init, W)
     
@@ -69,8 +69,14 @@ def print_metrics(X, symnmf_labels, kmeans_labels):
     Input: X (list of lists), symnmf_labels (list of int), kmeans_labels (list of int)
     """
     X_np = np.array(X)
-    nmf_score = silhouette_score(X_np, symnmf_labels)
-    kmeans_score = silhouette_score(X_np, kmeans_labels)
+
+    try:
+        nmf_score = silhouette_score(X_np, symnmf_labels)
+        kmeans_score = silhouette_score(X_np, kmeans_labels)
+    except Exception as e:
+        print(f"An Error Has Occurred")
+        sys.exit(1)
+
     ari_score = adjusted_rand_score(kmeans_labels, symnmf_labels)
     
     print(f"nmf: {nmf_score:.4f}")
